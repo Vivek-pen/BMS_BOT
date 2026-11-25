@@ -1,8 +1,6 @@
 name: BMS Doomsday 21 December Monitor
 
 on:
-  schedule:
-    - cron: "*/3 * * * *"
   workflow_dispatch:
     inputs:
       mode:
