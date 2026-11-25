@@ -17,10 +17,6 @@ INFINITY_FORMAT_TAGS = [
 ]
 CHECK_INTERVAL_SECONDS = 100
 CINEMAS_URL = "https://in.bookmyshow.com/explore/cinemas-hyderabad"
-TEST_VENUE_URL = (
-    "https://in.bookmyshow.com/cinemas/hyderabad/"
-    "prasads-multiplex-hyderabad/buytickets/PRHN/20261217"
-)
 TARGET_THEATER_PAGES = [
     (
         "prasads-multiplex-hyderabad",
@@ -91,64 +87,13 @@ def send_test_notification():
 
 
 def run_test_mode():
-    print("=" * 60)
-    print("BMS_DOOM_DEC21 - ONE-SHOT TEST (Dec 17 — live shows)")
-    print("=" * 60)
-
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
-        context = browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/131.0.0.0 Safari/537.36"
-            ),
-            viewport={"width": 1280, "height": 800},
-        )
-        page = context.new_page()
-
-        print(f"\n1. Loading {TEST_VENUE_URL}")
-        page.goto(TEST_VENUE_URL, wait_until="domcontentloaded", timeout=30000)
-        page.wait_for_timeout(5000)
-
-        print(f"   Final URL: {page.url}")
-        if "20261217" not in page.url:
-            print("   FAIL: Redirected away from Dec 17. Date is not live.")
-            browser.close()
-            return False
-
-        print("   PASS: Dec 17 page is live.")
-        content = page.inner_text("body")
-        lines = [line.strip() for line in content.splitlines() if line.strip()]
-
-        print("\n2. Searching for English Avengers: Doomsday MS-Infinity Vision")
-        blocks = find_english_infinity_blocks(lines)
-
-        if not blocks:
-            print("   FAIL: No English MS-Infinity Vision showtime block found.")
-            browser.close()
-            return False
-
-        entry = blocks[0]
-        print(f"   PASS: Found showtimes: {', '.join(entry['showtimes'])}")
-        print(f"   Matched formats: {', '.join(entry['matched_formats'])}")
-
-        message = (
-            "<b>BMS_DOOM_DEC21 TEST ALERT</b>\n\n"
-            "Avengers: Doomsday English MS-Infinity Vision detection passed.\n"
-            f"<b>Theater:</b> Prasads Multiplex\n"
-            f"<b>Test date:</b> 17 December 2026\n"
-            f"<b>Formats:</b> {', '.join(entry['matched_formats'])}\n"
-            f"<b>Shows:</b> {', '.join(entry['showtimes'])}\n"
-            f"<b>Details:</b> <code>{entry['block_text'][:280]}</code>\n\n"
-            f"<a href='{TEST_VENUE_URL}'>Test on BookMyShow</a>"
-        )
-
-        print("\n3. Sending Telegram test alert")
-        success = send_telegram_alert(message)
-        browser.close()
-        print("\nTEST COMPLETE")
-        return success
+    print("Sending a direct Telegram test message (no BookMyShow check).")
+    success = send_test_notification()
+    if success:
+        print("Telegram test passed. Check your Telegram chat.")
+    else:
+        print("Telegram test failed. Check the Actions log and repository secrets.")
+    return success
 
 
 def run_one_shot_check():
@@ -338,7 +283,7 @@ def monitor_december_21():
 
 if __name__ == "__main__":
     if "--test" in sys.argv:
-        run_test_mode()
+        sys.exit(0 if run_test_mode() else 1)
     elif "--check-one-shot" in sys.argv:
         run_one_shot_check()
     else:
